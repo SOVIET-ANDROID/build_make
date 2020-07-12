@@ -125,6 +125,12 @@ Usage:  sign_target_files_apks [flags] input_target_files output_target_files
 
   --android_jar_path <path>
       Path to the android.jar to repack the apex file.
+	  
+  --prebuilts_path <path to prebuild image files>
+      Specify a path that contains one or more image files, to be added to the
+      signed_target-files.zip.  Note, this directory must contain *only* .img
+      files that you want to add. All other files in the directory will be
+      added as well.
 """
 
 from __future__ import print_function
@@ -175,6 +181,7 @@ OPTIONS.avb_keys = {}
 OPTIONS.avb_algorithms = {}
 OPTIONS.avb_extra_args = {}
 OPTIONS.android_jar_path = None
+OPTIONS.prebuilts_path = ""
 
 
 AVB_FOOTER_ARGS_BY_PARTITION = {
@@ -1231,6 +1238,8 @@ def main(argv):
       OPTIONS.avb_extra_args['vbmeta_vendor'] = a
     elif o == "--avb_apex_extra_args":
       OPTIONS.avb_extra_args['apex'] = a
+    elif o == "--prebuilts_path":
+      OPTIONS.prebuilts_path = a
     elif o == "--avb_extra_custom_image_key":
       partition, key = a.split("=")
       OPTIONS.avb_keys[partition] = key
@@ -1290,6 +1299,7 @@ def main(argv):
           "avb_extra_custom_image_key=",
           "avb_extra_custom_image_algorithm=",
           "avb_extra_custom_image_extra_args=",
+		  "prebuilts_path=",
       ],
       extra_option_handler=option_handler)
 
@@ -1331,6 +1341,12 @@ def main(argv):
                      apk_keys, apex_keys, key_passwords,
                      platform_api_level, codename_to_api_level_map,
                      compressed_extension)
+					 
+  if OPTIONS.prebuilts_path:
+    prebuilt_list = os.listdir(OPTIONS.prebuilts_path)
+
+    for prebuilt_image in prebuilt_list:
+      common.ZipWrite(output_zip, os.path.join(OPTIONS.prebuilts_path, prebuilt_image), os.path.join("IMAGES/", prebuilt_image))
 
   common.ZipClose(input_zip)
   common.ZipClose(output_zip)
@@ -1341,6 +1357,10 @@ def main(argv):
   # recovery patch is guaranteed to be regenerated there.
   if OPTIONS.rebuild_recovery:
     new_args.append("--rebuild_recovery")
+
+  if OPTIONS.prebuilts_path:
+    new_args.append("--add_missing")
+
   new_args.append(args[1])
   add_img_to_target_files.main(new_args)
 
