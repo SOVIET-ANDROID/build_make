@@ -210,7 +210,7 @@ def AddVendor(output_zip, recovery_img=None, boot_img=None):
       cmd = [avbtool, "add_hashtree_footer", "--image", img.name,
              "--partition_name", "vendor"]
       common.AppendAVBSigningArgs(cmd, "vendor")
-      args = OPTIONS.info_dict.get("avb_vendor_add_hash_footer_args")
+      args = OPTIONS.info_dict.get("avb_vendor_add_hashtree_footer_args")
       if args and args.strip():
         cmd.extend(shlex.split(args))
       common.RunAndCheckOutput(cmd)
