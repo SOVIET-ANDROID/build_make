@@ -834,6 +834,21 @@ def AddImagesToTargetFiles(filename):
   recovery_image = None
   if has_recovery:
     banner("recovery")
+    img = OutputFile(output_zip, OPTIONS.input_tmp, "IMAGES", "recovery.img")
+    if os.path.exists(img.name):
+      logger.info("recovery.img already exists; no need to rebuild...")
+      # AVB-sign the image as needed.
+      if OPTIONS.info_dict.get("avb_enable") == "true":
+        logger.info("updating avb hash for prebuilt recovery.img...")
+        avbtool = OPTIONS.info_dict["avb_avbtool"]
+        # The AVB hash footer will be replaced if already present.
+        cmd = [avbtool, "add_hash_footer", "--image", img.name,
+                "--partition_name", "recovery"]
+        common.AppendAVBSigningArgs(cmd, "recovery")
+        args = OPTIONS.info_dict.get("avb_recovery_add_hash_footer_args")
+        if args and args.strip():
+         cmd.extend(shlex.split(args))
+        common.RunAndCheckOutput(cmd)   
     recovery_image = common.GetBootableImage(
         "IMAGES/recovery.img", "recovery.img", OPTIONS.input_tmp, "RECOVERY")
     assert recovery_image, "Failed to create recovery.img."
